@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#050505">
+    <title>AR&#12376;&#12419;&#12435;&#12369;&#12435;</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <video id="cameraVideo" class="camera" autoplay muted playsinline></video>
+    <canvas id="actorCanvas" class="actor-canvas" aria-hidden="true"></canvas>
+    <video id="actorVideo" class="source-video" preload="auto" playsinline webkit-playsinline></video>
+
+    <main class="hud">
+      <section class="status-panel" aria-live="polite">
+        <p id="stateText" class="state-text">&#12473;&#12479;&#12540;&#12488;&#12375;&#12390;&#12367;&#12384;&#12373;&#12356;</p>
+        <p id="handsText" class="hands-text">&#12354;&#12394;&#12383;: - / &#30456;&#25163;: -</p>
+        <p id="streakText" class="streak-text">&#36899;&#21213;: 0</p>
+        <p id="missingText" class="missing-text" hidden></p>
+      </section>
+
+      <section class="controls" aria-label="&#12376;&#12419;&#12435;&#12369;&#12435;&#12398;&#25163;">
+        <button class="hand-button" type="button" data-hand="rock" disabled>&#12464;&#12540;</button>
+        <button class="hand-button" type="button" data-hand="scissors" disabled>&#12481;&#12519;&#12461;</button>
+        <button class="hand-button" type="button" data-hand="paper" disabled>&#12497;&#12540;</button>
+      </section>
+    </main>
+
+    <div id="startOverlay" class="start-overlay">
+      <button id="startButton" class="start-button" type="button">&#12473;&#12479;&#12540;&#12488;</button>
+      <p id="startHint" class="start-hint">&#32972;&#38754;&#12459;&#12513;&#12521;&#12392;&#20154;&#29289;&#21205;&#30011;&#12434;&#38283;&#22987;&#12375;&#12414;&#12377;</p>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
