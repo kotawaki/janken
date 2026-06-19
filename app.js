@@ -47,6 +47,7 @@ const ctx = actorCanvas.getContext("2d", { willReadFrequently: true });
 const startOverlay = document.getElementById("startOverlay");
 const startButton = document.getElementById("startButton");
 const roundButton = document.getElementById("roundButton");
+const skipButton = document.getElementById("skipButton");
 const startHint = document.getElementById("startHint");
 const stateText = document.getElementById("stateText");
 const handsText = document.getElementById("handsText");
@@ -64,9 +65,15 @@ let lastPlayerHand = null;
 let lastOpponentHand = null;
 let clipToken = 0;
 let renderStarted = false;
+let currentSkip = null;
 const missingFiles = new Set();
 
 startButton.addEventListener("click", startApp);
+skipButton.addEventListener("click", () => {
+  if (currentSkip) {
+    currentSkip();
+  }
+});
 roundButton.addEventListener("click", () => {
   if (!busy) {
     beginRound(awaitingAikoHand);
@@ -235,6 +242,7 @@ async function chooseHand(playerHand, isAikoRound) {
   updateHands();
   updateState(`\u76f8\u624b: ${HAND_LABELS[opponentHand]}`);
   await playOpponentHand(opponentHand);
+  hideSelectedHand();
 
   const result = judge(playerHand, opponentHand);
   if (result === "draw") {
@@ -267,6 +275,7 @@ async function handleLateHoi(playerHand) {
   lastOpponentHand = WINNING_HAND[playerHand];
   updateHands();
   await playOpponentHand(lastOpponentHand);
+  hideSelectedHand();
   playerStreak = 0;
   updateStreak();
   await playClip(Math.random() < 0.5 ? "cheat" : "win");
@@ -353,6 +362,7 @@ async function playClip(name, options = {}) {
     actorVideo.currentTime = 0;
     await actorVideo.play();
     if (!options.loop) {
+      showSkipButton(true);
       await waitForVideoEnd(actorVideo, token);
     }
   } catch (error) {
@@ -360,6 +370,10 @@ async function playClip(name, options = {}) {
     actorVideo.pause();
     if (!options.loop) {
       await sleep(MISSING_CLIP_MS);
+    }
+  } finally {
+    if (!options.loop) {
+      showSkipButton(false);
     }
   }
 }
@@ -397,9 +411,20 @@ function waitForVideoEnd(video, token) {
       resolve();
       return;
     }
-    const onEnded = () => {
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
       video.removeEventListener("ended", onEnded);
+      currentSkip = null;
       resolve();
+    };
+    const onEnded = () => {
+      finish();
+    };
+    currentSkip = () => {
+      video.pause();
+      finish();
     };
     video.addEventListener("ended", onEnded, { once: true });
   });
@@ -451,6 +476,15 @@ function clearSelectedHand() {
   handButtons.forEach((button) => {
     button.classList.remove("is-selected");
   });
+}
+
+function hideSelectedHand() {
+  clearSelectedHand();
+  setHandButtonsVisible(false);
+}
+
+function showSkipButton(visible) {
+  skipButton.hidden = !visible;
 }
 
 async function playOpponentHand(hand) {
