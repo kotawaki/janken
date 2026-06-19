@@ -35,7 +35,9 @@
     </main>
 
     <button id="statusToggleButton" class="status-toggle-button" type="button">info</button>
+    <button id="topButton" class="top-button" type="button" hidden>top</button>
     <button id="skipButton" class="skip-button" type="button" hidden>skip</button>
+    <div id="resultBadge" class="result-badge" hidden></div>
 
     <section id="previewPanel" class="preview-panel" hidden>
       <button id="previewToggleButton" class="preview-toggle-button" type="button">&#25805;&#20316;</button>
@@ -86,9 +88,19 @@
       <section class="opponent-select" aria-label="&#23550;&#25126;&#30456;&#25163;">
         <p class="opponent-title">&#23550;&#25126;&#30456;&#25163;</p>
         <div class="opponent-options">
-          <button class="opponent-button is-selected" type="button" data-opponent="default">&#30456;&#25163; A</button>
-          <button class="opponent-button" type="button" data-opponent="speed">&#30456;&#25163; B</button>
-          <button class="opponent-button" type="button" data-opponent="boss">&#30456;&#25163; C</button>
+          <button class="opponent-button is-selected" type="button" data-opponent="default">
+            <span class="opponent-name">&#30456;&#25163; A</span>
+            <span class="lock-state">Unlocked</span>
+          </button>
+          <button class="opponent-button" type="button" data-opponent="speed">
+            <span class="opponent-name">&#30456;&#25163; B</span>
+            <span class="lock-state">Locked</span>
+            <span class="unlock-note">Unlock: 5 wins vs A</span>
+          </button>
+          <button class="opponent-button" type="button" data-opponent="boss">
+            <span class="opponent-name">&#30456;&#25163; C</span>
+            <span class="lock-state">Locked</span>
+          </button>
         </div>
       </section>
       <button id="startButton" class="start-button" type="button">&#12473;&#12479;&#12540;&#12488;</button>

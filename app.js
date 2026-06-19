@@ -56,7 +56,9 @@ const statusPanel = document.querySelector(".status-panel");
 const statusToggleButton = document.getElementById("statusToggleButton");
 const startButton = document.getElementById("startButton");
 const roundButton = document.getElementById("roundButton");
+const topButton = document.getElementById("topButton");
 const skipButton = document.getElementById("skipButton");
+const resultBadge = document.getElementById("resultBadge");
 const previewModeButton = document.getElementById("previewModeButton");
 const previewPanel = document.getElementById("previewPanel");
 const previewToggleButton = document.getElementById("previewToggleButton");
@@ -93,6 +95,8 @@ const OPPONENT_LABELS = {
   speed: "\u76f8\u624b B",
   boss: "\u76f8\u624b C",
 };
+const OPPONENT_UNLOCK_KEY = "jankenUnlockedOpponents";
+const opponentUnlocked = loadUnlockedOpponents();
 
 let started = false;
 let busy = true;
@@ -124,8 +128,10 @@ let selectedOpponent = "default";
 const missingFiles = new Set();
 
 populatePreviewSelect();
+refreshOpponentLocks();
 statusToggleButton.addEventListener("click", toggleStatusPanel);
 startButton.addEventListener("click", startApp);
+topButton.addEventListener("click", returnToTopFromGame);
 previewModeButton.addEventListener("click", enterPreviewMode);
 previewToggleButton.addEventListener("click", togglePreviewControls);
 previewPlayButton.addEventListener("click", playSelectedPreview);
@@ -191,7 +197,9 @@ handButtons.forEach((button) => {
 });
 opponentButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    selectedOpponent = button.dataset.opponent || "default";
+    const opponent = button.dataset.opponent || "default";
+    if (!opponentUnlocked[opponent]) return;
+    selectedOpponent = opponent;
     opponentButtons.forEach((item) => {
       item.classList.toggle("is-selected", item === button);
     });
@@ -223,6 +231,7 @@ async function startApp() {
   }
 
   startOverlay.classList.add("is-hidden");
+  topButton.hidden = false;
   setReady("\u3058\u3083\u3093\u3051\u3093\u3092\u59cb\u3081\u307e\u3057\u3087\u3046");
 }
 
@@ -317,6 +326,7 @@ async function beginRound(isAikoRound) {
   setButtonsEnabled(false);
   setHandButtonsVisible(false);
   clearSelectedHand();
+  hideResultBadge();
   lastPlayerHand = null;
   lastOpponentHand = null;
   updateHands();
@@ -374,6 +384,7 @@ async function chooseHand(playerHand, isAikoRound) {
 
 async function handleDraw() {
   drawCount += 1;
+  showResultBadge("draw");
   updateState(`\u3042\u3044\u3053\uff01 (${drawCount}/${MAX_DRAW_COUNT})`);
   if (drawCount >= MAX_DRAW_COUNT) {
     await playClip("draw");
@@ -395,6 +406,7 @@ async function handleLateHoi(playerHand) {
   updateHands();
   await playOpponentHand(lastOpponentHand);
   hideSelectedHand();
+  showResultBadge("lose");
   playerStreak = 0;
   updateStreak();
   await playClip(Math.random() < 0.5 ? "cheat" : "win");
@@ -405,8 +417,12 @@ async function handleLateHoi(playerHand) {
 async function handlePlayerWin() {
   playerStreak += 1;
   updateStreak();
+  showResultBadge("win");
 
   if (playerStreak >= REWARD_STREAK) {
+    if (selectedOpponent === "default") {
+      unlockOpponent("speed");
+    }
     updateState("5\u9023\u52dd\u9054\u6210\uff01\u3054\u8912\u7f8e\uff01");
     await playClip("reward");
     playerStreak = 0;
@@ -425,6 +441,7 @@ async function handlePlayerWin() {
 async function handlePlayerLose() {
   playerStreak = 0;
   updateStreak();
+  showResultBadge("lose");
   updateState("\u3042\u306a\u305f\u306e\u8ca0\u3051\uff01");
   await playClip("win");
   drawCount = 0;
@@ -448,6 +465,7 @@ function setReady(message) {
   setRoundButtonMode(false);
   setHandButtonsVisible(false);
   clearSelectedHand();
+  hideResultBadge();
   updateState(message);
   setButtonsEnabled(false);
 }
@@ -457,6 +475,7 @@ async function returnToRoundStart(message) {
   lastOpponentHand = null;
   updateHands();
   clearSelectedHand();
+  hideResultBadge();
   await playClip("idle", { loop: true });
   busy = false;
   acceptingHand = false;
@@ -511,6 +530,8 @@ async function enterPreviewMode() {
   currentSkip = null;
   showSkipButton(false);
   hideSelectedHand();
+  hideResultBadge();
+  topButton.hidden = true;
   setHandButtonsVisible(false);
   roundButton.hidden = true;
   previewPanel.hidden = false;
@@ -677,9 +698,41 @@ function returnToTopFromPreview() {
   previewToggleButton.textContent = "\u64cd\u4f5c";
   actorCanvas.classList.remove("is-interactive");
   startOverlay.classList.remove("is-hidden");
+  topButton.hidden = true;
+  hideResultBadge();
   roundButton.hidden = false;
   roundButton.disabled = true;
   setRoundButtonMode(false);
+  updateState("\u30b9\u30bf\u30fc\u30c8\u3057\u3066\u304f\u3060\u3055\u3044");
+  updateHands();
+}
+
+function returnToTopFromGame() {
+  if (currentSkip) {
+    currentSkip();
+  }
+  clipToken += 1;
+  previewMode = false;
+  started = false;
+  busy = true;
+  acceptingHand = false;
+  awaitingAikoHand = false;
+  drawCount = 0;
+  lastPlayerHand = null;
+  lastOpponentHand = null;
+  actorVideo.pause();
+  actorVideo.playbackRate = 1;
+  showSkipButton(false);
+  hideSelectedHand();
+  hideResultBadge();
+  setHandButtonsVisible(false);
+  roundButton.hidden = false;
+  roundButton.disabled = true;
+  setRoundButtonMode(false);
+  topButton.hidden = true;
+  startButton.disabled = false;
+  startHint.textContent = "\u80cc\u9762\u30ab\u30e1\u30e9\u3068\u4eba\u7269\u52d5\u753b\u3092\u958b\u59cb\u3057\u307e\u3059";
+  startOverlay.classList.remove("is-hidden");
   updateState("\u30b9\u30bf\u30fc\u30c8\u3057\u3066\u304f\u3060\u3055\u3044");
   updateHands();
 }
@@ -899,6 +952,55 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
+function loadUnlockedOpponents() {
+  const base = { default: true, speed: false, boss: false };
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(OPPONENT_UNLOCK_KEY) || "{}");
+    return { ...base, ...saved, default: true };
+  } catch (error) {
+    return base;
+  }
+}
+
+function saveUnlockedOpponents() {
+  try {
+    window.localStorage.setItem(OPPONENT_UNLOCK_KEY, JSON.stringify(opponentUnlocked));
+  } catch (error) {
+    // Ignore private browsing or storage denial.
+  }
+}
+
+function unlockOpponent(opponent) {
+  if (opponentUnlocked[opponent]) return;
+  opponentUnlocked[opponent] = true;
+  saveUnlockedOpponents();
+  refreshOpponentLocks();
+}
+
+function refreshOpponentLocks() {
+  opponentButtons.forEach((button) => {
+    const opponent = button.dataset.opponent || "default";
+    const unlocked = Boolean(opponentUnlocked[opponent]);
+    const lockState = button.querySelector(".lock-state");
+    button.disabled = !unlocked;
+    button.classList.toggle("is-locked", !unlocked);
+    if (lockState) {
+      lockState.textContent = unlocked ? "Unlocked" : "Locked";
+    }
+    if (!unlocked && button.classList.contains("is-selected")) {
+      button.classList.remove("is-selected");
+    }
+  });
+
+  if (!opponentUnlocked[selectedOpponent]) {
+    selectedOpponent = "default";
+  }
+
+  opponentButtons.forEach((button) => {
+    button.classList.toggle("is-selected", (button.dataset.opponent || "default") === selectedOpponent);
+  });
+}
+
 function randomHand() {
   return HANDS[Math.floor(Math.random() * HANDS.length)];
 }
@@ -920,6 +1022,21 @@ function updateHands() {
 
 function updateStreak() {
   streakText.textContent = `\u9023\u52dd: ${playerStreak}`;
+}
+
+function showResultBadge(result) {
+  const messages = {
+    win: "You win\ud83c\udf89",
+    lose: "You lose\ud83d\udca6",
+    draw: "Draw\ud83e\udd1d",
+  };
+  resultBadge.textContent = messages[result] || "";
+  resultBadge.hidden = !resultBadge.textContent;
+}
+
+function hideResultBadge() {
+  resultBadge.hidden = true;
+  resultBadge.textContent = "";
 }
 
 function setButtonsEnabled(enabled) {

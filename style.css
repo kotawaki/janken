@@ -82,9 +82,9 @@ button {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
 
-.status-toggle-button {
+.status-toggle-button,
+.top-button {
   position: fixed;
-  top: calc(max(12px, env(safe-area-inset-top)) + 8px);
   right: max(12px, env(safe-area-inset-right));
   z-index: 8;
   min-width: 48px;
@@ -98,8 +98,17 @@ button {
   pointer-events: auto;
 }
 
+.status-toggle-button {
+  top: calc(max(12px, env(safe-area-inset-top)) + 8px);
+}
+
+.top-button {
+  bottom: max(14px, env(safe-area-inset-bottom));
+}
+
 .utility-toggle-button,
-.status-toggle-button.is-hidden-state {
+.status-toggle-button.is-hidden-state,
+.top-button:active {
   background: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.86);
 }
@@ -178,15 +187,48 @@ button {
 }
 
 .opponent-button {
-  min-height: 46px;
-  padding: 0 8px;
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-height: 68px;
+  padding: 8px 6px;
   font-size: 14px;
   box-shadow: none;
+}
+
+.opponent-name {
+  line-height: 1.1;
+}
+
+.lock-state,
+.unlock-note {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+.unlock-note {
+  color: rgba(255, 255, 255, 0.54);
 }
 
 .opponent-button.is-selected {
   border-color: rgba(255, 255, 255, 0.84);
   background: rgba(255, 255, 255, 0.2);
+}
+
+.opponent-button.is-locked {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.22);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.opponent-button.is-locked .lock-state {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.opponent-button:disabled {
+  opacity: 1;
+  transform: none;
 }
 
 .round-button {
@@ -228,6 +270,22 @@ button {
   height: 148px;
 }
 
+.result-badge {
+  position: fixed;
+  left: 50%;
+  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 138px);
+  z-index: 4;
+  width: min(88vw, 420px);
+  color: #fff;
+  font-size: clamp(34px, 9vw, 58px);
+  font-weight: 900;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.92), 0 1px 2px rgba(0, 0, 0, 0.9);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
 .hand-button:active,
 .round-button:active,
 .start-button:active,
@@ -262,7 +320,7 @@ button {
 .skip-button {
   position: fixed;
   right: max(14px, env(safe-area-inset-right));
-  bottom: max(14px, env(safe-area-inset-bottom));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 50px);
   z-index: 5;
   min-width: 72px;
   min-height: 42px;
