@@ -142,18 +142,15 @@ button {
 .hand-icon {
   width: 42px;
   height: 42px;
-  fill: none;
-  stroke: #fff;
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .hand-button.is-selected {
   position: fixed;
   left: 50%;
-  top: 50%;
+  top: auto;
+  bottom: calc(max(18px, env(safe-area-inset-bottom)) + 76px);
   z-index: 4;
   width: 168px;
   height: 168px;
@@ -162,13 +159,12 @@ button {
   background: transparent;
   box-shadow: none;
   opacity: 1;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 }
 
 .hand-button.is-selected .hand-icon {
   width: 148px;
   height: 148px;
-  stroke-width: 4;
 }
 
 .hand-button:active,
@@ -185,7 +181,7 @@ button {
 
 .hand-button.is-selected:disabled {
   opacity: 1;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
 }
 
 .start-overlay {
