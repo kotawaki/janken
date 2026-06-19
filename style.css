@@ -292,9 +292,28 @@ button {
   appearance: auto;
 }
 
+.preview-range {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.preview-label {
+  display: grid;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.preview-label .preview-select {
+  min-height: 40px;
+  font-size: 13px;
+}
+
 .preview-actions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 8px;
 }
 

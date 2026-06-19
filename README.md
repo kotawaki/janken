@@ -23,23 +23,22 @@ assets/videos/
   cheat.mp4
   reward.mp4
 assets/preview-videos/
-  idle.mp4
-  janken.mp4
-  hoi.mp4
-  aiko.mp4
-  aiko_hoi.mp4
-  aiko_comment.mp4
-  late_hoi.mp4
-  win.mp4
-  lose.mp4
-  draw.mp4
-  cheat.mp4
-  reward.mp4
+  pre_01.mp4
+  pre_02.mp4
+  pre_03.mp4
+  pre_04.mp4
+  pre_05.mp4
+  pre_06.mp4
+  pre_07.mp4
+  pre_08.mp4
+  pre_09.mp4
+  pre_10.mp4
 ```
 
 If a video file is missing, the app does not stop. It shows the missing file name on screen and continues with a short simulated playback delay.
 
 Preview-mode videos are managed separately in `assets/preview-videos/`.
+Use `pre_01.mp4` through `pre_10.mp4`; the preview screen can play one file or a continuous range.
 
 ## Local Check
 

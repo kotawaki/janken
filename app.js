@@ -25,20 +25,10 @@ const CLIPS = {
   reward: "gohoubi.MP4",
 };
 
-const PREVIEW_CLIPS = [
-  { file: "idle.mp4", label: "idle.mp4" },
-  { file: "janken.mp4", label: "janken.mp4" },
-  { file: "hoi.mp4", label: "hoi.mp4" },
-  { file: "aiko.mp4", label: "aiko.mp4" },
-  { file: "aiko_hoi.mp4", label: "aiko_hoi.mp4" },
-  { file: "aiko_comment.mp4", label: "aiko_comment.mp4" },
-  { file: "late_hoi.mp4", label: "late_hoi.mp4" },
-  { file: "win.mp4", label: "win.mp4" },
-  { file: "lose.mp4", label: "lose.mp4" },
-  { file: "draw.mp4", label: "draw.mp4" },
-  { file: "cheat.mp4", label: "cheat.mp4" },
-  { file: "reward.mp4", label: "reward.mp4" },
-];
+const PREVIEW_CLIPS = Array.from({ length: 10 }, (_, index) => {
+  const number = String(index + 1).padStart(2, "0");
+  return { file: `pre_${number}.mp4`, label: `pre_${number}.mp4` };
+});
 
 const HANDS = ["rock", "scissors", "paper"];
 const HAND_LABELS = {
@@ -68,7 +58,10 @@ const skipButton = document.getElementById("skipButton");
 const previewModeButton = document.getElementById("previewModeButton");
 const previewPanel = document.getElementById("previewPanel");
 const previewSelect = document.getElementById("previewSelect");
+const previewStartSelect = document.getElementById("previewStartSelect");
+const previewEndSelect = document.getElementById("previewEndSelect");
 const previewPlayButton = document.getElementById("previewPlayButton");
+const previewRangeButton = document.getElementById("previewRangeButton");
 const previewStopButton = document.getElementById("previewStopButton");
 const previewSlowButton = document.getElementById("previewSlowButton");
 const previewFastButton = document.getElementById("previewFastButton");
@@ -99,6 +92,7 @@ let clipToken = 0;
 let renderStarted = false;
 let cameraStarted = false;
 let previewMode = false;
+let previewSequenceToken = 0;
 let currentSkip = null;
 let selectedOpponent = "default";
 const missingFiles = new Set();
@@ -107,6 +101,7 @@ populatePreviewSelect();
 startButton.addEventListener("click", startApp);
 previewModeButton.addEventListener("click", enterPreviewMode);
 previewPlayButton.addEventListener("click", playSelectedPreview);
+previewRangeButton.addEventListener("click", playPreviewRange);
 previewStopButton.addEventListener("click", stopPreviewVideo);
 previewSlowButton.addEventListener("click", () => {
   actorVideo.playbackRate = 0.5;
@@ -473,7 +468,31 @@ async function enterPreviewMode() {
 
 async function playSelectedPreview() {
   if (!previewMode) return;
+  previewSequenceToken += 1;
   const fileName = previewSelect.value;
+  await playPreviewFile(fileName, previewSequenceToken);
+}
+
+async function playPreviewRange() {
+  if (!previewMode) return;
+  const startIndex = Number(previewStartSelect.value);
+  const endIndex = Number(previewEndSelect.value);
+  const from = Math.min(startIndex, endIndex);
+  const to = Math.max(startIndex, endIndex);
+  const token = previewSequenceToken + 1;
+  previewSequenceToken = token;
+
+  for (let index = from; index <= to; index += 1) {
+    if (previewSequenceToken !== token) return;
+    await playPreviewFile(PREVIEW_CLIPS[index].file, token, { waitUntilEnd: true });
+  }
+
+  if (previewSequenceToken === token) {
+    updateState("\u9023\u7d9a\u518d\u751f\u304c\u5b8c\u4e86\u3057\u307e\u3057\u305f");
+  }
+}
+
+async function playPreviewFile(fileName, token, options = {}) {
   actorVideo.loop = false;
   actorVideo.playbackRate = 1;
   actorVideo.muted = false;
@@ -485,12 +504,19 @@ async function playSelectedPreview() {
     await waitForVideoReady(actorVideo);
     actorVideo.currentTime = 0;
     await actorVideo.play();
+    if (options.waitUntilEnd) {
+      await waitForPreviewEnd(actorVideo, token);
+    }
   } catch (error) {
     markMissing(`${PREVIEW_VIDEO_DIR}${fileName}`);
+    if (options.waitUntilEnd) {
+      await sleep(MISSING_CLIP_MS);
+    }
   }
 }
 
 function stopPreviewVideo() {
+  previewSequenceToken += 1;
   actorVideo.pause();
   actorVideo.currentTime = 0;
   actorVideo.playbackRate = 1;
@@ -498,6 +524,7 @@ function stopPreviewVideo() {
 }
 
 function returnToTopFromPreview() {
+  previewSequenceToken += 1;
   previewMode = false;
   actorVideo.pause();
   actorVideo.playbackRate = 1;
@@ -564,6 +591,33 @@ function waitForVideoEnd(video, token) {
   });
 }
 
+function waitForPreviewEnd(video, token) {
+  return new Promise((resolve) => {
+    if (video.ended || previewSequenceToken !== token) {
+      resolve();
+      return;
+    }
+
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      video.removeEventListener("ended", onEnded);
+      window.clearInterval(timer);
+      resolve();
+    };
+    const onEnded = () => {
+      finish();
+    };
+    const timer = window.setInterval(() => {
+      if (previewSequenceToken !== token) {
+        finish();
+      }
+    }, 100);
+    video.addEventListener("ended", onEnded, { once: true });
+  });
+}
+
 function randomHand() {
   return HANDS[Math.floor(Math.random() * HANDS.length)];
 }
@@ -626,12 +680,23 @@ function setRoundButtonMode(isAikoRound) {
 }
 
 function populatePreviewSelect() {
-  PREVIEW_CLIPS.forEach((clip) => {
+  PREVIEW_CLIPS.forEach((clip, index) => {
     const option = document.createElement("option");
     option.value = clip.file;
     option.textContent = clip.label;
     previewSelect.appendChild(option);
+
+    const startOption = document.createElement("option");
+    startOption.value = String(index);
+    startOption.textContent = clip.label;
+    previewStartSelect.appendChild(startOption);
+
+    const endOption = document.createElement("option");
+    endOption.value = String(index);
+    endOption.textContent = clip.label;
+    previewEndSelect.appendChild(endOption);
   });
+  previewEndSelect.value = String(PREVIEW_CLIPS.length - 1);
 }
 
 async function playOpponentHand(hand) {
