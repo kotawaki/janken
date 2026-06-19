@@ -118,7 +118,9 @@ button {
 .hand-button,
 .round-button,
 .start-button,
-.opponent-button {
+.opponent-button,
+.preview-button,
+.preview-select {
   min-height: 58px;
   border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 8px;
@@ -249,6 +251,58 @@ button {
 
 .skip-button:active {
   transform: translateY(1px);
+}
+
+.preview-entry-button {
+  position: fixed;
+  left: 50%;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.preview-entry-button:active {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.preview-panel {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 4;
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.preview-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 15px;
+  appearance: auto;
+}
+
+.preview-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.preview-button {
+  min-height: 42px;
+  padding: 0 6px;
+  font-size: 13px;
+  box-shadow: none;
 }
 
 .start-overlay.is-hidden {

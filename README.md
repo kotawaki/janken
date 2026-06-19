@@ -22,9 +22,24 @@ assets/videos/
   draw.mp4
   cheat.mp4
   reward.mp4
+assets/preview-videos/
+  idle.mp4
+  janken.mp4
+  hoi.mp4
+  aiko.mp4
+  aiko_hoi.mp4
+  aiko_comment.mp4
+  late_hoi.mp4
+  win.mp4
+  lose.mp4
+  draw.mp4
+  cheat.mp4
+  reward.mp4
 ```
 
 If a video file is missing, the app does not stop. It shows the missing file name on screen and continues with a short simulated playback delay.
+
+Preview-mode videos are managed separately in `assets/preview-videos/`.
 
 ## Local Check
 

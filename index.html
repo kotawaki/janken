@@ -36,6 +36,17 @@
 
     <button id="skipButton" class="skip-button" type="button" hidden>skip</button>
 
+    <section id="previewPanel" class="preview-panel" hidden>
+      <select id="previewSelect" class="preview-select" aria-label="&#30906;&#35469;&#29992;&#21205;&#30011;"></select>
+      <div class="preview-actions">
+        <button id="previewPlayButton" class="preview-button" type="button">&#20877;&#29983;</button>
+        <button id="previewStopButton" class="preview-button" type="button">&#12473;&#12488;&#12483;&#12503;</button>
+        <button id="previewSlowButton" class="preview-button" type="button">&#12473;&#12525;&#12540;</button>
+        <button id="previewFastButton" class="preview-button" type="button">&#20493;&#36895;</button>
+        <button id="previewTopButton" class="preview-button" type="button">&#12488;&#12483;&#12503;&#12408;</button>
+      </div>
+    </section>
+
     <div id="startOverlay" class="start-overlay">
       <section class="opponent-select" aria-label="&#23550;&#25126;&#30456;&#25163;">
         <p class="opponent-title">&#23550;&#25126;&#30456;&#25163;</p>
@@ -47,6 +58,7 @@
       </section>
       <button id="startButton" class="start-button" type="button">&#12473;&#12479;&#12540;&#12488;</button>
       <p id="startHint" class="start-hint">&#32972;&#38754;&#12459;&#12513;&#12521;&#12392;&#20154;&#29289;&#21205;&#30011;&#12434;&#38283;&#22987;&#12375;&#12414;&#12377;</p>
+      <button id="previewModeButton" class="preview-entry-button" type="button">&#21205;&#30011;&#30906;&#35469;</button>
     </div>
 
     <script src="app.js"></script>

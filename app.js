@@ -1,6 +1,7 @@
 "use strict";
 
 const VIDEO_DIR = "assets/videos/";
+const PREVIEW_VIDEO_DIR = "assets/preview-videos/";
 const LATE_HOI_RATE = 0.1;
 const MAX_DRAW_COUNT = 3;
 const REWARD_STREAK = 5;
@@ -23,6 +24,21 @@ const CLIPS = {
   cheat: "cheat.mp4",
   reward: "gohoubi.MP4",
 };
+
+const PREVIEW_CLIPS = [
+  { file: "idle.mp4", label: "idle.mp4" },
+  { file: "janken.mp4", label: "janken.mp4" },
+  { file: "hoi.mp4", label: "hoi.mp4" },
+  { file: "aiko.mp4", label: "aiko.mp4" },
+  { file: "aiko_hoi.mp4", label: "aiko_hoi.mp4" },
+  { file: "aiko_comment.mp4", label: "aiko_comment.mp4" },
+  { file: "late_hoi.mp4", label: "late_hoi.mp4" },
+  { file: "win.mp4", label: "win.mp4" },
+  { file: "lose.mp4", label: "lose.mp4" },
+  { file: "draw.mp4", label: "draw.mp4" },
+  { file: "cheat.mp4", label: "cheat.mp4" },
+  { file: "reward.mp4", label: "reward.mp4" },
+];
 
 const HANDS = ["rock", "scissors", "paper"];
 const HAND_LABELS = {
@@ -49,6 +65,14 @@ const startOverlay = document.getElementById("startOverlay");
 const startButton = document.getElementById("startButton");
 const roundButton = document.getElementById("roundButton");
 const skipButton = document.getElementById("skipButton");
+const previewModeButton = document.getElementById("previewModeButton");
+const previewPanel = document.getElementById("previewPanel");
+const previewSelect = document.getElementById("previewSelect");
+const previewPlayButton = document.getElementById("previewPlayButton");
+const previewStopButton = document.getElementById("previewStopButton");
+const previewSlowButton = document.getElementById("previewSlowButton");
+const previewFastButton = document.getElementById("previewFastButton");
+const previewTopButton = document.getElementById("previewTopButton");
 const startHint = document.getElementById("startHint");
 const stateText = document.getElementById("stateText");
 const handsText = document.getElementById("handsText");
@@ -73,11 +97,26 @@ let lastPlayerHand = null;
 let lastOpponentHand = null;
 let clipToken = 0;
 let renderStarted = false;
+let cameraStarted = false;
+let previewMode = false;
 let currentSkip = null;
 let selectedOpponent = "default";
 const missingFiles = new Set();
 
+populatePreviewSelect();
 startButton.addEventListener("click", startApp);
+previewModeButton.addEventListener("click", enterPreviewMode);
+previewPlayButton.addEventListener("click", playSelectedPreview);
+previewStopButton.addEventListener("click", stopPreviewVideo);
+previewSlowButton.addEventListener("click", () => {
+  actorVideo.playbackRate = 0.5;
+  updateState("\u30b9\u30ed\u30fc\u518d\u751f");
+});
+previewFastButton.addEventListener("click", () => {
+  actorVideo.playbackRate = 2;
+  updateState("\u500d\u901f\u518d\u751f");
+});
+previewTopButton.addEventListener("click", returnToTopFromPreview);
 skipButton.addEventListener("click", () => {
   if (currentSkip) {
     currentSkip();
@@ -134,6 +173,10 @@ async function startApp() {
 }
 
 async function startCamera() {
+  if (cameraStarted && cameraVideo.srcObject) {
+    return;
+  }
+
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     throw new Error("\u3053\u306e\u30d6\u30e9\u30a6\u30b6\u306f\u30ab\u30e1\u30e9API\u306b\u5bfe\u5fdc\u3057\u3066\u3044\u307e\u305b\u3093\u3002");
   }
@@ -149,6 +192,7 @@ async function startCamera() {
   const stream = await navigator.mediaDevices.getUserMedia(constraints);
   cameraVideo.srcObject = stream;
   await cameraVideo.play();
+  cameraStarted = true;
 }
 
 function startRenderLoop() {
@@ -370,6 +414,7 @@ async function returnToRoundStart(message) {
 }
 
 async function playClip(name, options = {}) {
+  if (previewMode) return;
   const token = ++clipToken;
   const fileName = CLIPS[name];
   const source = VIDEO_DIR + fileName;
@@ -398,6 +443,73 @@ async function playClip(name, options = {}) {
       showSkipButton(false);
     }
   }
+}
+
+async function enterPreviewMode() {
+  previewMode = true;
+  started = false;
+  busy = true;
+  acceptingHand = false;
+  awaitingAikoHand = false;
+  clipToken += 1;
+  currentSkip = null;
+  showSkipButton(false);
+  hideSelectedHand();
+  setHandButtonsVisible(false);
+  roundButton.hidden = true;
+  previewPanel.hidden = false;
+  startOverlay.classList.add("is-hidden");
+  resizeCanvas();
+  startRenderLoop();
+  updateState("\u52d5\u753b\u3092\u9078\u3093\u3067\u518d\u751f\u3057\u3066\u304f\u3060\u3055\u3044");
+  handsText.textContent = "\u3058\u3083\u3093\u3051\u3093\u306a\u3057\u7248";
+
+  try {
+    await startCamera();
+  } catch (error) {
+    updateState("\u30ab\u30e1\u30e9\u3092\u8d77\u52d5\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002HTTPS\u3068\u30ab\u30e1\u30e9\u8a31\u53ef\u3092\u78ba\u8a8d\u3057\u3066\u304f\u3060\u3055\u3044\u3002");
+  }
+}
+
+async function playSelectedPreview() {
+  if (!previewMode) return;
+  const fileName = previewSelect.value;
+  actorVideo.loop = false;
+  actorVideo.playbackRate = 1;
+  actorVideo.muted = false;
+  actorVideo.src = PREVIEW_VIDEO_DIR + fileName;
+  actorVideo.load();
+  updateState(`${fileName} \u3092\u518d\u751f\u4e2d`);
+
+  try {
+    await waitForVideoReady(actorVideo);
+    actorVideo.currentTime = 0;
+    await actorVideo.play();
+  } catch (error) {
+    markMissing(`${PREVIEW_VIDEO_DIR}${fileName}`);
+  }
+}
+
+function stopPreviewVideo() {
+  actorVideo.pause();
+  actorVideo.currentTime = 0;
+  actorVideo.playbackRate = 1;
+  updateState("\u505c\u6b62\u4e2d");
+}
+
+function returnToTopFromPreview() {
+  previewMode = false;
+  actorVideo.pause();
+  actorVideo.playbackRate = 1;
+  actorVideo.removeAttribute("src");
+  actorVideo.load();
+  previewPanel.hidden = true;
+  startOverlay.classList.remove("is-hidden");
+  roundButton.hidden = false;
+  roundButton.disabled = true;
+  setRoundButtonMode(false);
+  updateState("\u30b9\u30bf\u30fc\u30c8\u3057\u3066\u304f\u3060\u3055\u3044");
+  updateHands();
 }
 
 function waitForVideoReady(video) {
@@ -511,6 +623,15 @@ function showSkipButton(visible) {
 
 function setRoundButtonMode(isAikoRound) {
   roundButton.textContent = isAikoRound ? "\u3042\u3044\u3053\u3067\u301c" : "\u3058\u3083\u3093\u3051\u3093";
+}
+
+function populatePreviewSelect() {
+  PREVIEW_CLIPS.forEach((clip) => {
+    const option = document.createElement("option");
+    option.value = clip.file;
+    option.textContent = clip.label;
+    previewSelect.appendChild(option);
+  });
 }
 
 async function playOpponentHand(hand) {
