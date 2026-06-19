@@ -98,6 +98,7 @@ button {
   pointer-events: auto;
 }
 
+.utility-toggle-button,
 .status-toggle-button.is-hidden-state {
   background: rgba(255, 255, 255, 0.14);
   color: rgba(255, 255, 255, 0.86);
@@ -299,26 +300,27 @@ button {
 
 .preview-panel {
   position: fixed;
-  left: max(12px, env(safe-area-inset-left));
+  left: auto;
   right: max(12px, env(safe-area-inset-right));
   bottom: max(14px, env(safe-area-inset-bottom));
   z-index: 4;
   display: grid;
   gap: 10px;
-  max-width: 640px;
-  margin: 0 auto;
+  width: auto;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - max(72px, env(safe-area-inset-top)) - max(14px, env(safe-area-inset-bottom)));
   pointer-events: auto;
 }
 
 .preview-toggle-button {
   justify-self: center;
-  min-width: 92px;
-  min-height: 42px;
+  min-width: 48px;
+  min-height: 32px;
   border: 1px solid rgba(255, 255, 255, 0.26);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.46);
-  color: rgba(255, 255, 255, 0.86);
-  font-size: 14px;
+  background: rgba(0, 0, 0, 0.34);
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 12px;
   font-weight: 800;
   pointer-events: auto;
 }
@@ -330,6 +332,11 @@ button {
 .preview-controls {
   display: grid;
   gap: 10px;
+  width: min(640px, calc(100vw - 24px));
+  max-height: calc(100vh - max(120px, env(safe-area-inset-top)) - max(70px, env(safe-area-inset-bottom)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 8px;
