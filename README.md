@@ -41,6 +41,7 @@ Preview-mode videos are managed separately in `assets/preview-videos/`.
 Use `pre_01.mp4` through `pre_10.mp4`; the preview screen can play one file or a continuous range.
 After loading a preview video, use the timeline sliders to choose a start and end time, then use segment playback or segment loop.
 Preview controls can be shown or hidden with the bottom control button, and the composited actor video size can be adjusted with the display-size slider.
+In preview mode, the top info panel can be hidden, the actor can be dragged with one finger, and the actor size can be changed with a two-finger pinch.
 
 ## Local Check
 

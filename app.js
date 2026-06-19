@@ -52,6 +52,8 @@ const actorVideo = document.getElementById("actorVideo");
 const actorCanvas = document.getElementById("actorCanvas");
 const ctx = actorCanvas.getContext("2d", { willReadFrequently: true });
 const startOverlay = document.getElementById("startOverlay");
+const statusPanel = document.querySelector(".status-panel");
+const statusToggleButton = document.getElementById("statusToggleButton");
 const startButton = document.getElementById("startButton");
 const roundButton = document.getElementById("roundButton");
 const skipButton = document.getElementById("skipButton");
@@ -109,11 +111,20 @@ let segmentLoopEnabled = false;
 let segmentPlaybackActive = false;
 let syncingTimeline = false;
 let actorScale = 1;
+let actorOffsetX = 0;
+let actorOffsetY = 0;
+let gestureStartDistance = 0;
+let gestureStartScale = 1;
+let dragStartX = 0;
+let dragStartY = 0;
+let dragStartOffsetX = 0;
+let dragStartOffsetY = 0;
 let currentSkip = null;
 let selectedOpponent = "default";
 const missingFiles = new Set();
 
 populatePreviewSelect();
+statusToggleButton.addEventListener("click", toggleStatusPanel);
 startButton.addEventListener("click", startApp);
 previewModeButton.addEventListener("click", enterPreviewMode);
 previewToggleButton.addEventListener("click", togglePreviewControls);
@@ -154,6 +165,10 @@ actorScaleSlider.addEventListener("input", () => {
   actorScale = Number(actorScaleSlider.value) || 1;
   actorScaleText.textContent = `${Math.round(actorScale * 100)}%`;
 });
+actorCanvas.addEventListener("touchstart", handleActorTouchStart, { passive: false });
+actorCanvas.addEventListener("touchmove", handleActorTouchMove, { passive: false });
+actorCanvas.addEventListener("touchend", handleActorTouchEnd, { passive: false });
+actorCanvas.addEventListener("touchcancel", handleActorTouchEnd, { passive: false });
 actorVideo.addEventListener("loadedmetadata", syncTimelineToVideo);
 actorVideo.addEventListener("timeupdate", handlePreviewTimeUpdate);
 skipButton.addEventListener("click", () => {
@@ -260,8 +275,10 @@ function drawKeyedVideo() {
   const scale = Math.min(canvasW / videoW, canvasH / videoH) * actorScale;
   const drawW = Math.round(videoW * scale);
   const drawH = Math.round(videoH * scale);
-  const drawX = Math.round((canvasW - drawW) / 2);
-  const drawY = Math.round(canvasH - drawH);
+  const ratioX = canvasW / window.innerWidth;
+  const ratioY = canvasH / window.innerHeight;
+  const drawX = Math.round((canvasW - drawW) / 2 + actorOffsetX * ratioX);
+  const drawY = Math.round(canvasH - drawH + actorOffsetY * ratioY);
 
   ctx.drawImage(actorVideo, drawX, drawY, drawW, drawH);
 
@@ -500,6 +517,7 @@ async function enterPreviewMode() {
   previewControls.hidden = true;
   previewToggleButton.classList.remove("is-open");
   previewToggleButton.textContent = "\u64cd\u4f5c";
+  actorCanvas.classList.add("is-interactive");
   startOverlay.classList.add("is-hidden");
   resizeCanvas();
   startRenderLoop();
@@ -657,6 +675,7 @@ function returnToTopFromPreview() {
   previewControls.hidden = true;
   previewToggleButton.classList.remove("is-open");
   previewToggleButton.textContent = "\u64cd\u4f5c";
+  actorCanvas.classList.remove("is-interactive");
   startOverlay.classList.remove("is-hidden");
   roundButton.hidden = false;
   roundButton.disabled = true;
@@ -824,6 +843,60 @@ function togglePreviewControls() {
   previewControls.hidden = nextHidden;
   previewToggleButton.classList.toggle("is-open", !nextHidden);
   previewToggleButton.textContent = nextHidden ? "\u64cd\u4f5c" : "\u9589\u3058\u308b";
+}
+
+function toggleStatusPanel() {
+  const hidden = !statusPanel.hidden;
+  statusPanel.hidden = hidden;
+  statusToggleButton.classList.toggle("is-hidden-state", hidden);
+  statusToggleButton.textContent = hidden ? "show" : "info";
+}
+
+function handleActorTouchStart(event) {
+  if (!previewMode) return;
+  event.preventDefault();
+
+  if (event.touches.length === 1) {
+    const touch = event.touches[0];
+    dragStartX = touch.clientX;
+    dragStartY = touch.clientY;
+    dragStartOffsetX = actorOffsetX;
+    dragStartOffsetY = actorOffsetY;
+  } else if (event.touches.length >= 2) {
+    gestureStartDistance = getTouchDistance(event.touches[0], event.touches[1]);
+    gestureStartScale = actorScale;
+  }
+}
+
+function handleActorTouchMove(event) {
+  if (!previewMode) return;
+  event.preventDefault();
+
+  if (event.touches.length === 1) {
+    const touch = event.touches[0];
+    actorOffsetX = dragStartOffsetX + touch.clientX - dragStartX;
+    actorOffsetY = dragStartOffsetY + touch.clientY - dragStartY;
+  } else if (event.touches.length >= 2 && gestureStartDistance > 0) {
+    const distance = getTouchDistance(event.touches[0], event.touches[1]);
+    actorScale = clamp(gestureStartScale * (distance / gestureStartDistance), 0.5, 1.8);
+    actorScaleSlider.value = actorScale.toFixed(2);
+    actorScaleText.textContent = `${Math.round(actorScale * 100)}%`;
+  }
+}
+
+function handleActorTouchEnd(event) {
+  if (!previewMode) return;
+  if (event.touches.length === 0) {
+    gestureStartDistance = 0;
+  }
+}
+
+function getTouchDistance(first, second) {
+  return Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function randomHand() {
