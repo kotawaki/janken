@@ -23,6 +23,10 @@ button {
   font: inherit;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .camera,
 .actor-canvas {
   position: fixed;
@@ -108,6 +112,7 @@ button {
 }
 
 .hand-button,
+.round-button,
 .start-button {
   min-height: 54px;
   border: 1px solid rgba(255, 255, 255, 0.28);
@@ -119,12 +124,36 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+.round-button {
+  grid-column: 1 / -1;
+}
+
+.hand-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.hand-icon {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.hand-button.is-selected {
+  background: #ffe36e;
+  border-color: rgba(255, 255, 255, 0.72);
+}
+
 .hand-button:active,
+.round-button:active,
 .start-button:active {
   transform: translateY(1px);
 }
 
-.hand-button:disabled {
+.hand-button:disabled,
+.round-button:disabled {
   opacity: 0.48;
   transform: none;
 }

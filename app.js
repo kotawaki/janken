@@ -13,11 +13,14 @@ const CLIPS = {
   aiko: "aiko.mp4",
   aikoHoi: "aiko_hoi.mp4",
   lateHoi: "late_hoi.mp4",
+  opponentRock: "gu-.MP4",
+  opponentScissors: "choki.MP4",
+  opponentPaper: "pa-.MP4",
   win: "win.mp4",
   lose: "lose.mp4",
   draw: "draw.mp4",
   cheat: "cheat.mp4",
-  reward: "reward.mp4",
+  reward: "gohoubi.MP4",
 };
 
 const HANDS = ["rock", "scissors", "paper"];
@@ -43,6 +46,7 @@ const actorCanvas = document.getElementById("actorCanvas");
 const ctx = actorCanvas.getContext("2d", { willReadFrequently: true });
 const startOverlay = document.getElementById("startOverlay");
 const startButton = document.getElementById("startButton");
+const roundButton = document.getElementById("roundButton");
 const startHint = document.getElementById("startHint");
 const stateText = document.getElementById("stateText");
 const handsText = document.getElementById("handsText");
@@ -52,6 +56,7 @@ const handButtons = Array.from(document.querySelectorAll(".hand-button"));
 
 let started = false;
 let busy = true;
+let acceptingHand = false;
 let awaitingAikoHand = false;
 let playerStreak = 0;
 let drawCount = 0;
@@ -62,11 +67,16 @@ let renderStarted = false;
 const missingFiles = new Set();
 
 startButton.addEventListener("click", startApp);
+roundButton.addEventListener("click", () => {
+  if (!busy) {
+    beginRound(awaitingAikoHand);
+  }
+});
 handButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const hand = button.dataset.hand;
-    if (!busy && hand) {
-      playRound(hand, awaitingAikoHand);
+    if (acceptingHand && hand) {
+      chooseHand(hand, awaitingAikoHand);
     }
   });
 });
@@ -95,7 +105,7 @@ async function startApp() {
   }
 
   startOverlay.classList.add("is-hidden");
-  setReady("\u624b\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044");
+  setReady("\u3058\u3083\u3093\u3051\u3093\u3092\u59cb\u3081\u307e\u3057\u3087\u3046");
 }
 
 async function startCamera() {
@@ -173,22 +183,46 @@ function resizeCanvas() {
   }
 }
 
-async function playRound(playerHand, isAikoRound) {
+async function beginRound(isAikoRound) {
   busy = true;
+  acceptingHand = false;
   awaitingAikoHand = false;
+  roundButton.disabled = true;
+  roundButton.hidden = true;
   setButtonsEnabled(false);
-  lastPlayerHand = playerHand;
+  setHandButtonsVisible(false);
+  clearSelectedHand();
+  lastPlayerHand = null;
   lastOpponentHand = null;
   updateHands();
   updateState(isAikoRound ? "\u3042\u3044\u3053\u3067..." : "\u3058\u3083\u301c\u3093\u3051\u301c\u3093...");
 
   if (isAikoRound) {
-    await playClip("aikoHoi");
+    await playClip("aiko");
   } else {
     drawCount = 0;
     await playClip("janken");
-    await playClip("hoi");
   }
+
+  acceptingHand = true;
+  busy = false;
+  awaitingAikoHand = isAikoRound;
+  updateState("\u624b\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044");
+  setHandButtonsVisible(true);
+  setButtonsEnabled(true);
+}
+
+async function chooseHand(playerHand, isAikoRound) {
+  busy = true;
+  acceptingHand = false;
+  setButtonsEnabled(false);
+  selectHandButton(playerHand);
+  lastPlayerHand = playerHand;
+  lastOpponentHand = null;
+  updateHands();
+  updateState("\u307b\u3044\uff01");
+
+  await playClip(isAikoRound ? "aikoHoi" : "hoi");
 
   const lateHoi = Math.random() < LATE_HOI_RATE;
   if (lateHoi) {
@@ -199,6 +233,8 @@ async function playRound(playerHand, isAikoRound) {
   const opponentHand = randomHand();
   lastOpponentHand = opponentHand;
   updateHands();
+  updateState(`\u76f8\u624b: ${HAND_LABELS[opponentHand]}`);
+  await playOpponentHand(opponentHand);
 
   const result = judge(playerHand, opponentHand);
   if (result === "draw") {
@@ -220,11 +256,9 @@ async function handleDraw() {
     return;
   }
 
-  await playClip("aiko");
   awaitingAikoHand = true;
   busy = false;
-  updateState("\u3042\u3044\u3053\u3067... \u624b\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044");
-  setButtonsEnabled(true);
+  await returnToRoundStart("\u3042\u3044\u3053\u3067\u3057\u305f\u3002\u3082\u3046\u4e00\u5ea6\uff01");
 }
 
 async function handleLateHoi(playerHand) {
@@ -232,6 +266,7 @@ async function handleLateHoi(playerHand) {
   await playClip("lateHoi");
   lastOpponentHand = WINNING_HAND[playerHand];
   updateHands();
+  await playOpponentHand(lastOpponentHand);
   playerStreak = 0;
   updateStreak();
   await playClip(Math.random() < 0.5 ? "cheat" : "win");
@@ -278,9 +313,29 @@ async function returnToIdle(message) {
 
 function setReady(message) {
   busy = false;
+  acceptingHand = false;
   awaitingAikoHand = false;
+  roundButton.hidden = false;
+  roundButton.disabled = false;
+  setHandButtonsVisible(false);
+  clearSelectedHand();
   updateState(message);
-  setButtonsEnabled(true);
+  setButtonsEnabled(false);
+}
+
+async function returnToRoundStart(message) {
+  lastPlayerHand = null;
+  lastOpponentHand = null;
+  updateHands();
+  clearSelectedHand();
+  await playClip("idle", { loop: true });
+  busy = false;
+  acceptingHand = false;
+  roundButton.hidden = false;
+  roundButton.disabled = false;
+  setHandButtonsVisible(false);
+  setButtonsEnabled(false);
+  updateState(message);
 }
 
 async function playClip(name, options = {}) {
@@ -377,6 +432,34 @@ function setButtonsEnabled(enabled) {
   handButtons.forEach((button) => {
     button.disabled = !enabled;
   });
+}
+
+function setHandButtonsVisible(visible) {
+  handButtons.forEach((button) => {
+    button.hidden = !visible;
+  });
+}
+
+function selectHandButton(hand) {
+  handButtons.forEach((button) => {
+    button.classList.toggle("is-selected", button.dataset.hand === hand);
+    button.hidden = button.dataset.hand !== hand;
+  });
+}
+
+function clearSelectedHand() {
+  handButtons.forEach((button) => {
+    button.classList.remove("is-selected");
+  });
+}
+
+async function playOpponentHand(hand) {
+  const clipByHand = {
+    rock: "opponentRock",
+    scissors: "opponentScissors",
+    paper: "opponentPaper",
+  };
+  await playClip(clipByHand[hand]);
 }
 
 function markMissing(fileName) {
