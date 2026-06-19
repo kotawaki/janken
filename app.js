@@ -57,15 +57,19 @@ const roundButton = document.getElementById("roundButton");
 const skipButton = document.getElementById("skipButton");
 const previewModeButton = document.getElementById("previewModeButton");
 const previewPanel = document.getElementById("previewPanel");
+const previewToggleButton = document.getElementById("previewToggleButton");
+const previewControls = document.getElementById("previewControls");
 const previewSelect = document.getElementById("previewSelect");
 const previewStartSelect = document.getElementById("previewStartSelect");
 const previewEndSelect = document.getElementById("previewEndSelect");
 const currentTimeSlider = document.getElementById("currentTimeSlider");
 const segmentStartSlider = document.getElementById("segmentStartSlider");
 const segmentEndSlider = document.getElementById("segmentEndSlider");
+const actorScaleSlider = document.getElementById("actorScaleSlider");
 const currentTimeText = document.getElementById("currentTimeText");
 const segmentStartText = document.getElementById("segmentStartText");
 const segmentEndText = document.getElementById("segmentEndText");
+const actorScaleText = document.getElementById("actorScaleText");
 const previewPlayButton = document.getElementById("previewPlayButton");
 const previewRangeButton = document.getElementById("previewRangeButton");
 const segmentPlayButton = document.getElementById("segmentPlayButton");
@@ -104,6 +108,7 @@ let previewSequenceToken = 0;
 let segmentLoopEnabled = false;
 let segmentPlaybackActive = false;
 let syncingTimeline = false;
+let actorScale = 1;
 let currentSkip = null;
 let selectedOpponent = "default";
 const missingFiles = new Set();
@@ -111,6 +116,7 @@ const missingFiles = new Set();
 populatePreviewSelect();
 startButton.addEventListener("click", startApp);
 previewModeButton.addEventListener("click", enterPreviewMode);
+previewToggleButton.addEventListener("click", togglePreviewControls);
 previewPlayButton.addEventListener("click", playSelectedPreview);
 previewRangeButton.addEventListener("click", playPreviewRange);
 segmentPlayButton.addEventListener("click", playPreviewSegment);
@@ -143,6 +149,10 @@ segmentEndSlider.addEventListener("input", () => {
     segmentStartSlider.value = segmentEndSlider.value;
   }
   updateTimelineLabels();
+});
+actorScaleSlider.addEventListener("input", () => {
+  actorScale = Number(actorScaleSlider.value) || 1;
+  actorScaleText.textContent = `${Math.round(actorScale * 100)}%`;
 });
 actorVideo.addEventListener("loadedmetadata", syncTimelineToVideo);
 actorVideo.addEventListener("timeupdate", handlePreviewTimeUpdate);
@@ -247,7 +257,7 @@ function drawKeyedVideo() {
   const canvasH = actorCanvas.height;
   const videoW = actorVideo.videoWidth;
   const videoH = actorVideo.videoHeight;
-  const scale = Math.min(canvasW / videoW, canvasH / videoH);
+  const scale = Math.min(canvasW / videoW, canvasH / videoH) * actorScale;
   const drawW = Math.round(videoW * scale);
   const drawH = Math.round(videoH * scale);
   const drawX = Math.round((canvasW - drawW) / 2);
@@ -255,7 +265,7 @@ function drawKeyedVideo() {
 
   ctx.drawImage(actorVideo, drawX, drawY, drawW, drawH);
 
-  const frame = ctx.getImageData(drawX, drawY, drawW, drawH);
+  const frame = ctx.getImageData(0, 0, canvasW, canvasH);
   const pixels = frame.data;
   for (let index = 0; index < pixels.length; index += 4) {
     const red = pixels[index];
@@ -268,7 +278,7 @@ function drawKeyedVideo() {
       pixels[index + 3] = Math.max(0, pixels[index + 3] - 130);
     }
   }
-  ctx.putImageData(frame, drawX, drawY);
+  ctx.putImageData(frame, 0, 0);
 }
 
 function resizeCanvas() {
@@ -487,6 +497,9 @@ async function enterPreviewMode() {
   setHandButtonsVisible(false);
   roundButton.hidden = true;
   previewPanel.hidden = false;
+  previewControls.hidden = true;
+  previewToggleButton.classList.remove("is-open");
+  previewToggleButton.textContent = "\u64cd\u4f5c";
   startOverlay.classList.add("is-hidden");
   resizeCanvas();
   startRenderLoop();
@@ -641,6 +654,9 @@ function returnToTopFromPreview() {
   actorVideo.removeAttribute("src");
   actorVideo.load();
   previewPanel.hidden = true;
+  previewControls.hidden = true;
+  previewToggleButton.classList.remove("is-open");
+  previewToggleButton.textContent = "\u64cd\u4f5c";
   startOverlay.classList.remove("is-hidden");
   roundButton.hidden = false;
   roundButton.disabled = true;
@@ -801,6 +817,13 @@ function formatSeconds(value) {
 function updateSegmentLoopButton() {
   segmentLoopButton.classList.toggle("is-active", segmentLoopEnabled);
   segmentLoopButton.textContent = segmentLoopEnabled ? "\u89e3\u9664" : "\u30eb\u30fc\u30d7";
+}
+
+function togglePreviewControls() {
+  const nextHidden = !previewControls.hidden;
+  previewControls.hidden = nextHidden;
+  previewToggleButton.classList.toggle("is-open", !nextHidden);
+  previewToggleButton.textContent = nextHidden ? "\u64cd\u4f5c" : "\u9589\u3058\u308b";
 }
 
 function randomHand() {

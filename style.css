@@ -284,6 +284,34 @@ button {
   pointer-events: auto;
 }
 
+.preview-toggle-button {
+  justify-self: center;
+  min-width: 92px;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.46);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 14px;
+  font-weight: 800;
+  pointer-events: auto;
+}
+
+.preview-toggle-button.is-open {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.preview-controls {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
 .preview-select {
   width: 100%;
   min-height: 44px;
@@ -309,6 +337,13 @@ button {
 .preview-label .preview-select {
   min-height: 40px;
   font-size: 13px;
+}
+
+.size-label {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.34);
 }
 
 .timeline-panel {

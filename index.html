@@ -37,40 +37,47 @@
     <button id="skipButton" class="skip-button" type="button" hidden>skip</button>
 
     <section id="previewPanel" class="preview-panel" hidden>
-      <select id="previewSelect" class="preview-select" aria-label="&#30906;&#35469;&#29992;&#21205;&#30011;"></select>
-      <div class="preview-range">
-        <label class="preview-label">
-          <span>&#36215;&#28857;</span>
-          <select id="previewStartSelect" class="preview-select" aria-label="&#36899;&#32154;&#20877;&#29983;&#12398;&#36215;&#28857;"></select>
+      <button id="previewToggleButton" class="preview-toggle-button" type="button">&#25805;&#20316;</button>
+      <div id="previewControls" class="preview-controls" hidden>
+        <select id="previewSelect" class="preview-select" aria-label="&#30906;&#35469;&#29992;&#21205;&#30011;"></select>
+        <label class="timeline-label size-label">
+          <span>&#34920;&#31034;&#12469;&#12452;&#12474; <output id="actorScaleText">100%</output></span>
+          <input id="actorScaleSlider" class="timeline-slider" type="range" min="0.5" max="1.8" step="0.05" value="1">
         </label>
-        <label class="preview-label">
-          <span>&#32066;&#28857;</span>
-          <select id="previewEndSelect" class="preview-select" aria-label="&#36899;&#32154;&#20877;&#29983;&#12398;&#32066;&#28857;"></select>
-        </label>
-      </div>
-      <div class="timeline-panel">
-        <label class="timeline-label">
-          <span>&#29694;&#22312; <output id="currentTimeText">0.0s</output></span>
-          <input id="currentTimeSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
-        </label>
-        <label class="timeline-label">
-          <span>&#38283;&#22987; <output id="segmentStartText">0.0s</output></span>
-          <input id="segmentStartSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
-        </label>
-        <label class="timeline-label">
-          <span>&#32066;&#20102; <output id="segmentEndText">0.0s</output></span>
-          <input id="segmentEndSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
-        </label>
-      </div>
-      <div class="preview-actions">
-        <button id="previewPlayButton" class="preview-button" type="button">&#20877;&#29983;</button>
-        <button id="previewRangeButton" class="preview-button" type="button">&#36899;&#32154;</button>
-        <button id="segmentPlayButton" class="preview-button" type="button">&#21306;&#38291;</button>
-        <button id="segmentLoopButton" class="preview-button" type="button">&#12523;&#12540;&#12503;</button>
-        <button id="previewStopButton" class="preview-button" type="button">&#12473;&#12488;&#12483;&#12503;</button>
-        <button id="previewSlowButton" class="preview-button" type="button">&#12473;&#12525;&#12540;</button>
-        <button id="previewFastButton" class="preview-button" type="button">&#20493;&#36895;</button>
-        <button id="previewTopButton" class="preview-button" type="button">&#12488;&#12483;&#12503;&#12408;</button>
+        <div class="preview-range">
+          <label class="preview-label">
+            <span>&#36215;&#28857;</span>
+            <select id="previewStartSelect" class="preview-select" aria-label="&#36899;&#32154;&#20877;&#29983;&#12398;&#36215;&#28857;"></select>
+          </label>
+          <label class="preview-label">
+            <span>&#32066;&#28857;</span>
+            <select id="previewEndSelect" class="preview-select" aria-label="&#36899;&#32154;&#20877;&#29983;&#12398;&#32066;&#28857;"></select>
+          </label>
+        </div>
+        <div class="timeline-panel">
+          <label class="timeline-label">
+            <span>&#29694;&#22312; <output id="currentTimeText">0.0s</output></span>
+            <input id="currentTimeSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
+          </label>
+          <label class="timeline-label">
+            <span>&#38283;&#22987; <output id="segmentStartText">0.0s</output></span>
+            <input id="segmentStartSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
+          </label>
+          <label class="timeline-label">
+            <span>&#32066;&#20102; <output id="segmentEndText">0.0s</output></span>
+            <input id="segmentEndSlider" class="timeline-slider" type="range" min="0" max="0" step="0.1" value="0">
+          </label>
+        </div>
+        <div class="preview-actions">
+          <button id="previewPlayButton" class="preview-button" type="button">&#20877;&#29983;</button>
+          <button id="previewRangeButton" class="preview-button" type="button">&#36899;&#32154;</button>
+          <button id="segmentPlayButton" class="preview-button" type="button">&#21306;&#38291;</button>
+          <button id="segmentLoopButton" class="preview-button" type="button">&#12523;&#12540;&#12503;</button>
+          <button id="previewStopButton" class="preview-button" type="button">&#12473;&#12488;&#12483;&#12503;</button>
+          <button id="previewSlowButton" class="preview-button" type="button">&#12473;&#12525;&#12540;</button>
+          <button id="previewFastButton" class="preview-button" type="button">&#20493;&#36895;</button>
+          <button id="previewTopButton" class="preview-button" type="button">&#12488;&#12483;&#12503;&#12408;</button>
+        </div>
       </div>
     </section>
 
