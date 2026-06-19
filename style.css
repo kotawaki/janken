@@ -311,9 +311,37 @@ button {
   font-size: 13px;
 }
 
+.timeline-panel {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.timeline-label {
+  display: grid;
+  gap: 4px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.timeline-label span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.timeline-slider {
+  width: 100%;
+  accent-color: #fff;
+}
+
 .preview-actions {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -322,6 +350,11 @@ button {
   padding: 0 6px;
   font-size: 13px;
   box-shadow: none;
+}
+
+.preview-button.is-active {
+  border-color: rgba(255, 255, 255, 0.86);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .start-overlay.is-hidden {

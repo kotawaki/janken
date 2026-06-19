@@ -60,8 +60,16 @@ const previewPanel = document.getElementById("previewPanel");
 const previewSelect = document.getElementById("previewSelect");
 const previewStartSelect = document.getElementById("previewStartSelect");
 const previewEndSelect = document.getElementById("previewEndSelect");
+const currentTimeSlider = document.getElementById("currentTimeSlider");
+const segmentStartSlider = document.getElementById("segmentStartSlider");
+const segmentEndSlider = document.getElementById("segmentEndSlider");
+const currentTimeText = document.getElementById("currentTimeText");
+const segmentStartText = document.getElementById("segmentStartText");
+const segmentEndText = document.getElementById("segmentEndText");
 const previewPlayButton = document.getElementById("previewPlayButton");
 const previewRangeButton = document.getElementById("previewRangeButton");
+const segmentPlayButton = document.getElementById("segmentPlayButton");
+const segmentLoopButton = document.getElementById("segmentLoopButton");
 const previewStopButton = document.getElementById("previewStopButton");
 const previewSlowButton = document.getElementById("previewSlowButton");
 const previewFastButton = document.getElementById("previewFastButton");
@@ -93,6 +101,9 @@ let renderStarted = false;
 let cameraStarted = false;
 let previewMode = false;
 let previewSequenceToken = 0;
+let segmentLoopEnabled = false;
+let segmentPlaybackActive = false;
+let syncingTimeline = false;
 let currentSkip = null;
 let selectedOpponent = "default";
 const missingFiles = new Set();
@@ -102,6 +113,8 @@ startButton.addEventListener("click", startApp);
 previewModeButton.addEventListener("click", enterPreviewMode);
 previewPlayButton.addEventListener("click", playSelectedPreview);
 previewRangeButton.addEventListener("click", playPreviewRange);
+segmentPlayButton.addEventListener("click", playPreviewSegment);
+segmentLoopButton.addEventListener("click", togglePreviewSegmentLoop);
 previewStopButton.addEventListener("click", stopPreviewVideo);
 previewSlowButton.addEventListener("click", () => {
   actorVideo.playbackRate = 0.5;
@@ -112,6 +125,27 @@ previewFastButton.addEventListener("click", () => {
   updateState("\u500d\u901f\u518d\u751f");
 });
 previewTopButton.addEventListener("click", returnToTopFromPreview);
+previewSelect.addEventListener("change", loadSelectedPreviewMetadata);
+currentTimeSlider.addEventListener("input", () => {
+  if (syncingTimeline) return;
+  actorVideo.currentTime = Number(currentTimeSlider.value);
+  updateTimelineLabels();
+});
+segmentStartSlider.addEventListener("input", () => {
+  if (Number(segmentStartSlider.value) > Number(segmentEndSlider.value)) {
+    segmentEndSlider.value = segmentStartSlider.value;
+  }
+  actorVideo.currentTime = Number(segmentStartSlider.value);
+  updateTimelineLabels();
+});
+segmentEndSlider.addEventListener("input", () => {
+  if (Number(segmentEndSlider.value) < Number(segmentStartSlider.value)) {
+    segmentStartSlider.value = segmentEndSlider.value;
+  }
+  updateTimelineLabels();
+});
+actorVideo.addEventListener("loadedmetadata", syncTimelineToVideo);
+actorVideo.addEventListener("timeupdate", handlePreviewTimeUpdate);
 skipButton.addEventListener("click", () => {
   if (currentSkip) {
     currentSkip();
@@ -458,6 +492,7 @@ async function enterPreviewMode() {
   startRenderLoop();
   updateState("\u52d5\u753b\u3092\u9078\u3093\u3067\u518d\u751f\u3057\u3066\u304f\u3060\u3055\u3044");
   handsText.textContent = "\u3058\u3083\u3093\u3051\u3093\u306a\u3057\u7248";
+  resetTimelineControls();
 
   try {
     await startCamera();
@@ -469,12 +504,18 @@ async function enterPreviewMode() {
 async function playSelectedPreview() {
   if (!previewMode) return;
   previewSequenceToken += 1;
+  segmentLoopEnabled = false;
+  segmentPlaybackActive = false;
+  updateSegmentLoopButton();
   const fileName = previewSelect.value;
   await playPreviewFile(fileName, previewSequenceToken);
 }
 
 async function playPreviewRange() {
   if (!previewMode) return;
+  segmentLoopEnabled = false;
+  segmentPlaybackActive = false;
+  updateSegmentLoopButton();
   const startIndex = Number(previewStartSelect.value);
   const endIndex = Number(previewEndSelect.value);
   const from = Math.min(startIndex, endIndex);
@@ -515,8 +556,74 @@ async function playPreviewFile(fileName, token, options = {}) {
   }
 }
 
+async function loadSelectedPreviewMetadata() {
+  if (!previewMode) return;
+  previewSequenceToken += 1;
+  segmentLoopEnabled = false;
+  segmentPlaybackActive = false;
+  updateSegmentLoopButton();
+  const fileName = previewSelect.value;
+  actorVideo.pause();
+  actorVideo.playbackRate = 1;
+  actorVideo.src = PREVIEW_VIDEO_DIR + fileName;
+  actorVideo.load();
+  updateState(`${fileName} \u3092\u8aad\u307f\u8fbc\u307f\u4e2d`);
+
+  try {
+    await waitForVideoReady(actorVideo);
+    actorVideo.currentTime = 0;
+    updateState(`${fileName} \u306e\u533a\u9593\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044`);
+  } catch (error) {
+    markMissing(`${PREVIEW_VIDEO_DIR}${fileName}`);
+  }
+}
+
+async function playPreviewSegment() {
+  if (!previewMode) return;
+  segmentLoopEnabled = false;
+  updateSegmentLoopButton();
+  await playSegmentOnce();
+}
+
+async function togglePreviewSegmentLoop() {
+  if (!previewMode) return;
+  segmentLoopEnabled = !segmentLoopEnabled;
+  updateSegmentLoopButton();
+
+  if (segmentLoopEnabled) {
+    await playSegmentOnce();
+  } else {
+    segmentPlaybackActive = false;
+  }
+}
+
+async function playSegmentOnce() {
+  const start = getSegmentStart();
+  const end = getSegmentEnd();
+  if (end <= start) {
+    updateState("\u7d42\u4e86\u3092\u958b\u59cb\u3088\u308a\u5f8c\u306b\u3057\u3066\u304f\u3060\u3055\u3044");
+    return;
+  }
+
+  previewSequenceToken += 1;
+  segmentPlaybackActive = true;
+  actorVideo.currentTime = start;
+  actorVideo.playbackRate = 1;
+  updateTimelineLabels();
+  updateState(`\u533a\u9593 ${formatSeconds(start)} - ${formatSeconds(end)}`);
+
+  try {
+    await actorVideo.play();
+  } catch (error) {
+    markMissing(`${PREVIEW_VIDEO_DIR}${previewSelect.value}`);
+  }
+}
+
 function stopPreviewVideo() {
   previewSequenceToken += 1;
+  segmentLoopEnabled = false;
+  segmentPlaybackActive = false;
+  updateSegmentLoopButton();
   actorVideo.pause();
   actorVideo.currentTime = 0;
   actorVideo.playbackRate = 1;
@@ -525,6 +632,9 @@ function stopPreviewVideo() {
 
 function returnToTopFromPreview() {
   previewSequenceToken += 1;
+  segmentLoopEnabled = false;
+  segmentPlaybackActive = false;
+  updateSegmentLoopButton();
   previewMode = false;
   actorVideo.pause();
   actorVideo.playbackRate = 1;
@@ -616,6 +726,81 @@ function waitForPreviewEnd(video, token) {
     }, 100);
     video.addEventListener("ended", onEnded, { once: true });
   });
+}
+
+function syncTimelineToVideo() {
+  if (!previewMode) return;
+  const duration = Number.isFinite(actorVideo.duration) ? actorVideo.duration : 0;
+  const max = duration.toFixed(1);
+  [currentTimeSlider, segmentStartSlider, segmentEndSlider].forEach((slider) => {
+    slider.max = max;
+    slider.step = "0.1";
+  });
+
+  if (Number(segmentEndSlider.value) === 0 || Number(segmentEndSlider.value) > duration) {
+    segmentEndSlider.value = max;
+  }
+  if (Number(segmentStartSlider.value) > duration) {
+    segmentStartSlider.value = "0";
+  }
+  currentTimeSlider.value = "0";
+  updateTimelineLabels();
+}
+
+function handlePreviewTimeUpdate() {
+  if (!previewMode) return;
+  const current = actorVideo.currentTime || 0;
+  const end = getSegmentEnd();
+
+  syncingTimeline = true;
+  currentTimeSlider.value = String(Math.min(current, Number(currentTimeSlider.max) || current));
+  syncingTimeline = false;
+  currentTimeText.textContent = formatSeconds(current);
+
+  if (!segmentPlaybackActive) return;
+
+  if (segmentLoopEnabled && end > getSegmentStart() && current >= end) {
+    actorVideo.currentTime = getSegmentStart();
+    actorVideo.play();
+  } else if (!segmentLoopEnabled && actorVideo.paused === false && end > getSegmentStart() && current >= end) {
+    actorVideo.pause();
+    actorVideo.currentTime = end;
+    segmentPlaybackActive = false;
+  }
+}
+
+function resetTimelineControls() {
+  [currentTimeSlider, segmentStartSlider, segmentEndSlider].forEach((slider) => {
+    slider.min = "0";
+    slider.max = "0";
+    slider.value = "0";
+  });
+  currentTimeText.textContent = "0.0s";
+  segmentStartText.textContent = "0.0s";
+  segmentEndText.textContent = "0.0s";
+}
+
+function updateTimelineLabels() {
+  currentTimeText.textContent = formatSeconds(Number(currentTimeSlider.value));
+  segmentStartText.textContent = formatSeconds(getSegmentStart());
+  segmentEndText.textContent = formatSeconds(getSegmentEnd());
+}
+
+function getSegmentStart() {
+  return Number(segmentStartSlider.value) || 0;
+}
+
+function getSegmentEnd() {
+  return Number(segmentEndSlider.value) || 0;
+}
+
+function formatSeconds(value) {
+  return `${(Number(value) || 0).toFixed(1)}s`;
+}
+
+function updateSegmentLoopButton() {
+  segmentLoopButton.classList.toggle("is-active", segmentLoopEnabled);
+  segmentLoopButton.textContent = segmentLoopEnabled ? "\u89e3\u9664" : "\u30eb\u30fc\u30d7";
 }
 
 function randomHand() {
