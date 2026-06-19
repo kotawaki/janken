@@ -117,7 +117,8 @@ button {
 
 .hand-button,
 .round-button,
-.start-button {
+.start-button,
+.opponent-button {
   min-height: 58px;
   border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 8px;
@@ -126,6 +127,37 @@ button {
   font-weight: 800;
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
   -webkit-tap-highlight-color: transparent;
+}
+
+.opponent-select {
+  width: min(86vw, 360px);
+  pointer-events: auto;
+}
+
+.opponent-title {
+  margin: 0 0 10px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.opponent-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.opponent-button {
+  min-height: 46px;
+  padding: 0 8px;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.opponent-button.is-selected {
+  border-color: rgba(255, 255, 255, 0.84);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .round-button {
@@ -169,7 +201,8 @@ button {
 
 .hand-button:active,
 .round-button:active,
-.start-button:active {
+.start-button:active,
+.opponent-button:active {
   transform: translateY(1px);
 }
 

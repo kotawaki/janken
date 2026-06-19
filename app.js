@@ -12,6 +12,7 @@ const CLIPS = {
   hoi: "hoi.mp4",
   aiko: "aiko.mp4",
   aikoHoi: "aiko_hoi.mp4",
+  aikoComment: "aiko_comment.mp4",
   lateHoi: "late_hoi.mp4",
   opponentRock: "gu-.MP4",
   opponentScissors: "choki.MP4",
@@ -54,6 +55,13 @@ const handsText = document.getElementById("handsText");
 const streakText = document.getElementById("streakText");
 const missingText = document.getElementById("missingText");
 const handButtons = Array.from(document.querySelectorAll(".hand-button"));
+const opponentButtons = Array.from(document.querySelectorAll(".opponent-button"));
+
+const OPPONENT_LABELS = {
+  default: "\u76f8\u624b A",
+  speed: "\u76f8\u624b B",
+  boss: "\u76f8\u624b C",
+};
 
 let started = false;
 let busy = true;
@@ -66,6 +74,7 @@ let lastOpponentHand = null;
 let clipToken = 0;
 let renderStarted = false;
 let currentSkip = null;
+let selectedOpponent = "default";
 const missingFiles = new Set();
 
 startButton.addEventListener("click", startApp);
@@ -85,6 +94,15 @@ handButtons.forEach((button) => {
     if (acceptingHand && hand) {
       chooseHand(hand, awaitingAikoHand);
     }
+  });
+});
+opponentButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedOpponent = button.dataset.opponent || "default";
+    opponentButtons.forEach((item) => {
+      item.classList.toggle("is-selected", item === button);
+    });
+    updateHands();
   });
 });
 window.addEventListener("resize", resizeCanvas);
@@ -259,6 +277,7 @@ async function handleDraw() {
   updateState(`\u3042\u3044\u3053\uff01 (${drawCount}/${MAX_DRAW_COUNT})`);
   if (drawCount >= MAX_DRAW_COUNT) {
     await playClip("draw");
+    await playClip("aikoComment");
     drawCount = 0;
     await returnToIdle("\u624b\u3092\u9078\u3093\u3067\u304f\u3060\u3055\u3044");
     return;
@@ -326,6 +345,7 @@ function setReady(message) {
   awaitingAikoHand = false;
   roundButton.hidden = false;
   roundButton.disabled = false;
+  setRoundButtonMode(false);
   setHandButtonsVisible(false);
   clearSelectedHand();
   updateState(message);
@@ -340,8 +360,10 @@ async function returnToRoundStart(message) {
   await playClip("idle", { loop: true });
   busy = false;
   acceptingHand = false;
+  awaitingAikoHand = true;
   roundButton.hidden = false;
   roundButton.disabled = false;
+  setRoundButtonMode(true);
   setHandButtonsVisible(false);
   setButtonsEnabled(false);
   updateState(message);
@@ -446,7 +468,7 @@ function updateState(message) {
 function updateHands() {
   const player = lastPlayerHand ? HAND_LABELS[lastPlayerHand] : "-";
   const opponent = lastOpponentHand ? HAND_LABELS[lastOpponentHand] : "-";
-  handsText.textContent = `\u3042\u306a\u305f: ${player} / \u76f8\u624b: ${opponent}`;
+  handsText.textContent = `\u3042\u306a\u305f: ${player} / ${OPPONENT_LABELS[selectedOpponent]}: ${opponent}`;
 }
 
 function updateStreak() {
@@ -485,6 +507,10 @@ function hideSelectedHand() {
 
 function showSkipButton(visible) {
   skipButton.hidden = !visible;
+}
+
+function setRoundButtonMode(isAikoRound) {
+  roundButton.textContent = isAikoRound ? "\u3042\u3044\u3053\u3067\u301c" : "\u3058\u3083\u3093\u3051\u3093";
 }
 
 async function playOpponentHand(hand) {

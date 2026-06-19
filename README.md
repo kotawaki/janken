@@ -15,6 +15,7 @@ assets/videos/
   hoi.mp4
   aiko.mp4
   aiko_hoi.mp4
+  aiko_comment.mp4
   late_hoi.mp4
   win.mp4
   lose.mp4
