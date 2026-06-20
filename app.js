@@ -8,7 +8,6 @@ const REWARD_STREAK = 5;
 const MISSING_CLIP_MS = 700;
 
 const CLIPS = {
-  idle: "idle.mp4",
   janken: "janken.mp4",
   hoi: "hoi.mp4",
   aiko: "aiko.mp4",
@@ -24,6 +23,7 @@ const CLIPS = {
   cheat: "cheat.mp4",
   reward: "gohoubi.MP4",
 };
+const IDLE_CLIPS = ["idle_01.mp4", "idle_02.mp4", "idle_03.mp4", "idle_04.mp4"];
 
 const PREVIEW_CLIPS = Array.from({ length: 10 }, (_, index) => {
   const number = String(index + 1).padStart(2, "0");
@@ -125,6 +125,7 @@ let dragStartOffsetX = 0;
 let dragStartOffsetY = 0;
 let currentSkip = null;
 let selectedOpponent = "default";
+let lastIdleClip = null;
 const missingFiles = new Set();
 
 populatePreviewSelect();
@@ -491,7 +492,7 @@ async function returnToRoundStart(message) {
 async function playClip(name, options = {}) {
   if (previewMode) return;
   const token = ++clipToken;
-  const fileName = CLIPS[name];
+  const fileName = resolveClipFile(name);
   const source = VIDEO_DIR + fileName;
   actorVideo.loop = Boolean(options.loop);
   actorVideo.muted = false;
@@ -518,6 +519,21 @@ async function playClip(name, options = {}) {
       showSkipButton(false);
     }
   }
+}
+
+function resolveClipFile(name) {
+  if (name === "idle") {
+    return randomIdleClip();
+  }
+  return CLIPS[name];
+}
+
+function randomIdleClip() {
+  const candidates = IDLE_CLIPS.filter((fileName) => fileName !== lastIdleClip);
+  const pool = candidates.length > 0 ? candidates : IDLE_CLIPS;
+  const fileName = pool[Math.floor(Math.random() * pool.length)];
+  lastIdleClip = fileName;
+  return fileName;
 }
 
 async function enterPreviewMode() {
