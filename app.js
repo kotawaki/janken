@@ -947,7 +947,7 @@ function handleActorTouchMove(event) {
     actorOffsetY = dragStartOffsetY + touch.clientY - dragStartY;
   } else if (event.touches.length >= 2 && gestureStartDistance > 0) {
     const distance = getTouchDistance(event.touches[0], event.touches[1]);
-    actorScale = clamp(gestureStartScale * (distance / gestureStartDistance), 0.5, 1.8);
+    actorScale = clamp(gestureStartScale * (distance / gestureStartDistance), 0.5, 2.5);
     actorScaleSlider.value = actorScale.toFixed(2);
     actorScaleText.textContent = `${Math.round(actorScale * 100)}%`;
   }
